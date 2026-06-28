@@ -1,0 +1,12 @@
+[workspace]
+restore_data_on_startup = True
+save_data_on_exit = True
+save_history = True
+save_non_project_files = False
+project_type = 'empty-project-type'
+recent_files = ['Interfaces\\Fenetre.py', 'Interfaces\\facture.py', 'Interfaces\\__init__.py', 'models\\Produit.py', 'service\\venteService.py', 'models\\Vente.py', 'service\\produitService.py', 'repository\\produitRepository.py', 'ui\\factures.py', 'ui\\ligne_produit.py', 'ui\\widgets\\searchable_combobox.py', 'ui\\main.py']
+
+[main]
+version = 0.2.0
+recent_files = []
+
