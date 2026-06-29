@@ -4,102 +4,84 @@ Created on Tue Jun 23 15:59:32 2026
 
 @author: KAZITI
 """
+# -*- coding: utf-8 -*-
 from models.Produit import Produit
-class ProduitService : 
+
+
+class ProduitService:
     def __init__(self, repo):
         self.repo = repo
-    
+
+    # ---------- Lecture ----------
     def lireTous(self):
         return self.repo.lireTous()
-        
-    def ajouter(self , produit):
-        print("ajout")
-        self.repo.ajouterProduit(produit)
-        
-    def vendre(self, produit , valeur) :
-        if produit.estQuantifiable():
-            produit.quantite -= valeur
-        else : 
-            produit.total -= valeur
-            
-    def ajouterStock(self , produitId , valeur):
-        produit = self.chercherProduitParId(produitId)
-        if produit.estQuantifiable():
-            produit.quantite += float( valeur )
-        else : 
-            produit.total += float( valeur )
-            
-            
 
-    
-    def augmenterStock(self ,idP,  surplus):
-        p = self.repo.chercherProduitId(idP)
-        if not p:
-            print("produit non trouvé")
-        else :
-            if p.estQuantifiable() : 
-                p.quantite += surplus
+    def chercherProduitId(self, idP):
+        for el in self.lireTous():
+            if el["idP"] == idP:
+                return self._dictVersProduit(el)
+        return None
+
+    def chercherProduitParNom(self, nom):
+        for el in self.lireTous():
+            if el["nom"].lower() == nom.lower():
+                return self._dictVersProduit(el)
+        return None
+
+    # ---------- Écriture ----------
+    def ajouter(self, produit):
+        produit.idP = self.repo.genererNouvelId()
+        self.repo.ajouterProduit(produit)
+        return produit.idP
+
+    def modifierProduit(self, produit):
+        lignes = self.lireTous()
+        nouvelles = []
+        for el in lignes:
+            if el["idP"] == produit.idP:
+                nouvelles.append({
+                    "idP":          produit.idP,
+                    "nom":          produit.nom,
+                    "quantite":     produit.quantite if produit.quantite is not None else "",
+                    "prixUnitaire": produit.prixUnitaire if produit.prixUnitaire is not None else "",
+                    "total":        produit.total if produit.total is not None else "",
+                })
             else:
-                p.total += surplus
-            self.repo.modifierProduit(p)
-    def diminuerStock(self ,idP ,  malus):
+                nouvelles.append(el)
+        self.repo.reecireTous(nouvelles)
+
+    def supprimerProduit(self, idP):
+        lignes = self.lireTous()
+        nouvelles = [el for el in lignes if el["idP"] != idP]
+        self.repo.reecireTous(nouvelles)
+
+    # ---------- Stock ----------
+    def diminuerStock(self, idP, valeur):
         p = self.chercherProduitId(idP)
         if not p:
-            print("produit non trouvé")
-        else :
-            print("icii " ,type(p.quantite) )
-            if p.estQuantifiable() : 
-                p.quantite -= float(malus)
-            else:
-                p.total -= float(malus)
-            self.modifierProduit(p) 
-            
-            
-    def changerNom(self ,idP,  nouveauNom):
+            return
+        if p.estQuantifiable():
+            p.quantite = (p.quantite or 0) - float(valeur)
+        else:
+            p.total = (p.total or 0) - float(valeur)
+        self.modifierProduit(p)
+
+    def augmenterStock(self, idP, valeur):
         p = self.chercherProduitId(idP)
         if not p:
-            print("produit non trouvé")
-        else :
-            p.nom = nouveauNom
-            self.repo.modifierProduit(p)
-    def changerPrix(self , nouveauPrix):
-        pass
-    
-    def chercherProduitId(self, idP): 
-        dic = self.lireTous()
-        for el  in dic :
-            if(el["idP"] == idP ):
-                produit = Produit(idP =  el["idP"] , nom = el["nom"]  , quantite =  None if el["quantite"] == "" else int(el["quantite"])  ,
-                                  prixUnitaire = None if  el["prixUnitaire"]  == ""  else float(el["prixUnitaire"]) , total = None if el["total"] == "" else float(el["total"]) )
-                return produit
-        
-        return False
-    
-    def supprimerProduit(self , idP):
-        dic = self.lireTous()
-        new = []
-        for el in dic: 
-            if el.idP != idP :
-                new.append(el)
-        
-        self.repo.reecireTous(new)
-    def chercherProduitParNom(self , nom):
-        dic = self.lireTous()
-        for el  in dic : 
-            if(el.nom == nom):
-                produit = Produit(idP =  el.idP , nom = el.nom , quantite = None if  el.quantite == ""  else int(el.quantite) , prixUnitaire = None if el.prixUnitaire == "" else float(el.prixUnitaire) , total = None if el.total == "" else float(el.total))
-                return produit
-    def modifierProduit(self , produit):
-        reader = self.lireTous()
-        new = []
-        for el in reader: 
-            if el["idP"] == produit.idP :
-                new.append({"idP" : produit.idP , "nom" : produit.nom , "quantite" : produit.quantite , "prixUnitaire" : produit.prixUnitaire ,"total" : produit.total})
-            else : 
-                new.append(el)
-        print(new)
-        self.repo.reecireTous(new)    
-            
-        
-    
- 
+            return
+        if p.estQuantifiable():
+            p.quantite = (p.quantite or 0) + float(valeur)
+        else:
+            p.total = (p.total or 0) + float(valeur)
+        self.modifierProduit(p)
+
+    # ---------- Utilitaire ----------
+    def _dictVersProduit(self, el):
+        return Produit(
+            idP=el["idP"],
+            nom=el["nom"],
+            quantite=None if el["quantite"] == "" else float(el["quantite"]),
+            prixUnitaire=None if el["prixUnitaire"] == "" else float(el["prixUnitaire"]),
+            total=None if el["total"] == "" else float(el["total"]),
+        )
